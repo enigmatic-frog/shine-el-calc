@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #0b0b1e;
+  --color-brand-accent: #60a5fa;
+  --color-brand-secondary: #c4b5fd;
+  --color-brand-glow: rgba(96, 165, 250, 0.2);
+  --color-brand-purple: #4c1d95;
+  --color-brand-neon-red: #ff0033;
+  --color-brand-emerald: #10b981;
+}
+
+@layer base {
+  /* Hide spin buttons for Chrome, Safari, Edge, Opera */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Hide spin buttons for Firefox */
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  @keyframes pulse {
+    from { opacity: 0.2; transform: scale(1); }
+    to { opacity: 0.8; transform: scale(1.2); }
+  }
+}
