@@ -785,7 +785,6 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                         APPROXIMATE Base Combat Power
                       </h3>
                       <div className="mt-2 flex items-baseline justify-center gap-2">
-                        <AnimatePresence mode="wait">
                           <motion.span
                             key={combatPower}
                             initial={{ opacity: 0, y: 10 }}
@@ -795,7 +794,6 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                           >
                             {formatNumber(combatPower)}
                           </motion.span>
-                        </AnimatePresence>
                       </div>
                     </div>
 
@@ -806,7 +804,6 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                         </h3>
                       </div>
                       <div className="mt-2 flex items-baseline justify-center gap-2">
-                        <AnimatePresence mode="wait">
                           <motion.span
                             key={erdaLinkCombatPower}
                             initial={{ opacity: 0, y: 10 }}
@@ -816,7 +813,6 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                           >
                             {formatNumber(erdaLinkCombatPower)}
                           </motion.span>
-                        </AnimatePresence>
                       </div>
                       <p className="text-[14px] font-mono text-zinc-100 mt-2 uppercase tracking-tight">
                         Increase: <span className="text-brand-accent">+{formatNumber(erdaLinkCombatPower - combatPower)} ({((erdaLinkCombatPower / combatPower - 1) * 100).toFixed(2)}%)</span>
