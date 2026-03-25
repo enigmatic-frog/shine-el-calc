@@ -787,18 +787,18 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">
                   <span className="text-[11px] font-mono text-zinc-100 uppercase">Stat Factor (INT & LUK)</span>
                   <span className="text-xs font-mono text-zinc-100">
-                    {((4 * totalMainStat + totalSecondaryStat) / 100)}
+                    {(4 * totalMainStat + totalSecondaryStat)}
                   </span>
                 </div>
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">
                   <span className="text-[11px] font-mono text-zinc-100 uppercase">Magic Attack Factor</span>
                   <span className="text-xs font-mono text-zinc-100">
-                    {(stats.attack + stats.erdaAttack - stats.weaponTotalMagicAtt + stats.bowEquivalentTotalAtt) * (1 + stats.attackPercent / 100)}
+                    {Math.floor(((stats.attack + stats.erdaAttack - stats.weaponTotalMagicAtt + stats.bowEquivalentTotalAtt) * (1 + stats.attackPercent / 100)))}
                   </span>
                 </div>
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">
                   <span className="text-[11px] font-mono text-zinc-100 uppercase">Damage Factor</span>
-                  <span className="text-xs font-mono text-zinc-100">{((100 + stats.damage + stats.bossDamage + stats.erdaDamage + stats.erdaBossDamage) / 100).toFixed(2)}x</span>
+                  <span className="text-xs font-mono text-zinc-100">{((100 + stats.damage + stats.bossDamage + stats.erdaDamage + stats.erdaBossDamage) / 100).toFixed(4)}x</span>
                 </div>
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">
                   <span className="text-[11px] font-mono text-zinc-100 uppercase">Critical Damage Factor</span>

@@ -53,7 +53,7 @@ export const calculateCombatPower = (stats: CharacterStats, includeErda: boolean
   const baseFD = stats.finalDamageFactor;
   const totalFinalDamageFactor = (1 + baseFD / 100) * (stats.weaponType === 'genesis' ? 1.1 : 1);
 
-  const combatPower = 0.1 * statFactor * attackFactor * critFactor * damageFactor * totalFinalDamageFactor;
+  const combatPower = 0.01 * statFactor * attackFactor * critFactor * damageFactor * totalFinalDamageFactor;
 
   return Math.floor(combatPower);
 };
