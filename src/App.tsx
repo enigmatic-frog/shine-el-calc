@@ -596,8 +596,8 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                           <strong className="text-brand-accent block mb-1">Magic Attack Info:</strong>
                             • <span className="text-white">Default values are for a Genesis Weapon with a Tier 7 Attack Flame.<br/><br/>
                             • Select your weapon and server type, and input the <span className="text-yellow-400">Star Force</span> and <span className="text-teal-300">Attack Flame Tier</span> of your current weapon before inputting Magic Attack. If Interactive, input the <span className="text-brand-secondary">Weapon Scrolling Attack</span> value before inputting Magic Attack.<br/><br/>
-                            • For Magic Attack: Hover over MAGIC ATT in your stat window and look for [Applied Value]. Input (Base Value - Skills - Usable Item (This is the attack from the Soul Weapon gauge.) + Event Magic ATT + Empress's Blessing - Erda Link).<br/><br/>
-                            • <span className="text-brand-secondary">Example: Total Base Value (3820) - Skills (270) - Usable Item (20) + Event Magic ATT (40) + Empress's Blessing (30) - Erda Link (136) = 3464.</span><br/><br/>
+                            • For Magic Attack: Hover over MAGIC ATT in your stat window and look for [Applied Value]. Input (Base Value - Skills - Usable Item (This is the attack from the Soul Weapon gauge.) + Event Magic ATT + Will of the Alliance - Erda Link).<br/><br/>
+                            • <span className="text-brand-secondary">Example: Total Base Value (3820) - Skills (270) - Usable Item (20) + Event Magic ATT (40) + Will of the Alliance (5) - Erda Link (136) = 3464.</span><br/><br/>
                             • For Magic Attack %: Hover over MAGIC ATT in your stat window and look for [% Value]. Input only the Equipment Item value.<br/><br/></span>
                         </p>
                       </div>
@@ -778,15 +778,6 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                       <p className="text-[14px] font-mono text-zinc-100 mt-2 uppercase tracking-tight">
                         Increase: <span className="text-brand-accent">+{formatNumber(erdaLinkCombatPower - combatPower)} ({((erdaLinkCombatPower / combatPower - 1) * 100).toFixed(2)}%)</span>
                       </p>
-                      <div className="mt-6 pt-6 border-t border-white/10 text-left">
-                        <p className="text-[12px] font-mono text-white uppercase leading-relaxed tracking-wider">
-                          <strong className="block mb-1">Note:</strong>
-                          The Combat Power values shown may be slightly different from your Combat Power value in game.<br/><br/>
-                          The Official Combat Power formula converts weapons to their Bow equivalents and uses a hidden value for the attack calculation.<br/><br/>
-                          The Weapon Normalization value derived and used in the calculator may differ from the actual hidden value used in the game.<br/><br/>
-                          Regardless, the Combat Power values shown should be close enough to serve as a good estimate of your Combat Power.
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -802,7 +793,7 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">
                   <span className="text-[11px] font-mono text-zinc-100 uppercase">Magic Attack Factor</span>
                   <span className="text-xs font-mono text-zinc-100">
-                    {(stats.attack + stats.erdaAttack - stats.weaponTotalMagicAtt + stats.bowEquivalentTotalAtt - 25.0751278) * (1 + stats.attackPercent / 100)}
+                    {(stats.attack + stats.erdaAttack - stats.weaponTotalMagicAtt + stats.bowEquivalentTotalAtt) * (1 + stats.attackPercent / 100)}
                   </span>
                 </div>
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">

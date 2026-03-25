@@ -29,11 +29,11 @@ export const calculateCombatPower = (stats: CharacterStats, includeErda: boolean
   const totalLukPercent = baseLukPercent + (includeErda ? erdaStatPercent : 0);
   
   // New Formula: Total INT = Base INT * (1 + Total INT% / 100) + Flat INT + (Erda INT if included)
-  const totalMainStat = (baseMainStat * (1 + totalIntPercent / 100)) + flatMainStat + (includeErda ? erdaMainStat : 0);
-  const totalSecondaryStat = (baseSecondaryStat * (1 + totalLukPercent / 100)) + flatSecondaryStat + (includeErda ? erdaSecondaryStat : 0);
+  const totalMainStat = Math.floor((baseMainStat * (1 + totalIntPercent / 100))) + flatMainStat + (includeErda ? erdaMainStat : 0);
+  const totalSecondaryStat = Math.floor((baseSecondaryStat * (1 + totalLukPercent / 100))) + flatSecondaryStat + (includeErda ? erdaSecondaryStat : 0);
 
-  // Stat Factor: (4 * TOTAL INT + TOTAL LUK) / 100
-  const statFactor = (((4 * totalMainStat) + totalSecondaryStat) / 100);
+  // Stat Factor: (4 * TOTAL INT + TOTAL LUK)
+  const statFactor = ((4 * totalMainStat) + totalSecondaryStat);
   
   // Apply Erda Link additions to other factors if included
   const currentAttack = attack + (includeErda ? erdaAttack : 0);
@@ -42,9 +42,8 @@ export const calculateCombatPower = (stats: CharacterStats, includeErda: boolean
   const currentCritDamage = critDamage + (includeErda ? erdaCritDamage : 0);
 
   // Attack Factor: (Magic attack - Weapon Total Magic Attack + Bow Equivalent Total Attack) * (1 + Magic Attack% / 100)
-  const attackNormalizationConstant = 25.0751278;
   const attackFactor = 
-    (currentAttack - weaponTotalMagicAtt + bowEquivalentTotalAtt - attackNormalizationConstant) * (1 + (attackPercent / 100))
+    Math.floor(((currentAttack - weaponTotalMagicAtt + bowEquivalentTotalAtt) * (1 + (attackPercent / 100))))
   ;
   
   const critFactor = (135 + currentCritDamage) / 100;
@@ -54,7 +53,7 @@ export const calculateCombatPower = (stats: CharacterStats, includeErda: boolean
   const baseFD = stats.finalDamageFactor;
   const totalFinalDamageFactor = (1 + baseFD / 100) * (stats.weaponType === 'genesis' ? 1.1 : 1);
 
-  const combatPower = statFactor * attackFactor * critFactor * damageFactor * totalFinalDamageFactor;
+  const combatPower = 0.1 * statFactor * attackFactor * critFactor * damageFactor * totalFinalDamageFactor;
 
   return Math.floor(combatPower);
 };
