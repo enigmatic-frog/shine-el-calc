@@ -6,24 +6,22 @@ import { CharacterStats, INITIAL_STATS } from './types';
 import { calculateCombatPower, calculateErdaLinkCombatPower } from './utils/calculator';
 
 export default function App() {
-  const [stats, setStats] = useState<CharacterStats>(INITIAL_STATS);
+  const [stats, setStats] = useState<CharacterStats>(() => {
+    const saved = localStorage.getItem('sia_astelle_stats');
+    if (saved) {
+      try {
+        return { ...INITIAL_STATS, ...JSON.parse(saved) };
+      } catch (e) {
+        console.error('Failed to load initial stats', e);
+      }
+    }
+    return INITIAL_STATS;
+  });
   const [showSaved, setShowSaved] = useState(false);
   const [showShared, setShowShared] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
-  // Load stats from local storage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('sia_astelle_stats');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Merge with INITIAL_STATS to handle potential schema updates
-        setStats({ ...INITIAL_STATS, ...parsed });
-      } catch (e) {
-        console.error('Failed to load saved stats', e);
-      }
-    }
-  }, []);
+  // Stats are now initialized synchronously from localStorage
 
   const saveStats = () => {
     localStorage.setItem('sia_astelle_stats', JSON.stringify(stats));
@@ -41,12 +39,6 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
     setShowShared(true);
     setTimeout(() => setShowShared(false), 2000);
   };
-
-  const combatPower = useMemo(() => calculateCombatPower(stats), [stats]);
-  const erdaLinkCombatPower = useMemo(() => calculateErdaLinkCombatPower(stats), [stats]);
-
-  const weaponBaseMA = stats.weaponType === 'genesis' ? 400 : 347;
-  const bowBaseAtt = stats.weaponType === 'genesis' ? 318 : 276;
 
   const calculateFlameAtt = (base: number, level: number, tier: number) => {
     if (tier < 3) return 0;
@@ -75,97 +67,148 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
     return sfAtt;
   };
 
-  const flameMA = calculateFlameAtt(weaponBaseMA, stats.weaponLevel, stats.flameTier);
-  const flameBowAtt = calculateFlameAtt(bowBaseAtt, stats.weaponLevel, stats.flameTier);
+  const getWeaponStats = (s: CharacterStats) => {
+    const weaponBaseMA = s.weaponType === 'genesis' ? 400 : 347;
+    const bowBaseAtt = s.weaponType === 'genesis' ? 318 : 276;
 
-  const sfMA = calculateStarForceAtt(
-    weaponBaseMA, 
-    stats.starForce, 
-    stats.serverType === 'interactive' ? stats.weaponScrollingAttack : 0
-  );
-  const sfBowAtt = calculateStarForceAtt(
-    bowBaseAtt, 
-    stats.starForce, 
-    stats.serverType === 'interactive' ? stats.weaponScrollingAttack : 0
-  );
+    const flameMA = calculateFlameAtt(weaponBaseMA, s.weaponLevel, s.flameTier);
+    const flameBowAtt = calculateFlameAtt(bowBaseAtt, s.weaponLevel, s.flameTier);
 
-  const calculatedWeaponMA = weaponBaseMA + sfMA + flameMA + (stats.serverType === 'interactive' ? stats.weaponScrollingAttack : 0);
-  const calculatedBowAtt = bowBaseAtt + sfBowAtt + flameBowAtt + (stats.serverType === 'interactive' ? stats.weaponScrollingAttack : 0);
+    const sfMA = calculateStarForceAtt(
+      weaponBaseMA, 
+      s.starForce, 
+      s.serverType === 'interactive' ? s.weaponScrollingAttack : 0
+    );
+    const sfBowAtt = calculateStarForceAtt(
+      bowBaseAtt, 
+      s.starForce, 
+      s.serverType === 'interactive' ? s.weaponScrollingAttack : 0
+    );
 
-  // Sync calculated weapon stats to the stats object for the calculator
-  // Also update the main Magic Attack stat to reflect weapon changes
-  React.useEffect(() => {
-    setStats(prev => {
-      const maDiff = calculatedWeaponMA - prev.weaponTotalMagicAtt;
-      return {
-        ...prev,
-        attack: Math.max(calculatedWeaponMA, prev.attack + maDiff),
-        weaponTotalMagicAtt: calculatedWeaponMA,
-        bowEquivalentTotalAtt: calculatedBowAtt
-      };
-    });
-  }, [calculatedWeaponMA, calculatedBowAtt]);
+    const calculatedWeaponMA = weaponBaseMA + sfMA + flameMA + (s.serverType === 'interactive' ? s.weaponScrollingAttack : 0);
+    const calculatedBowAtt = bowBaseAtt + sfBowAtt + flameBowAtt + (s.serverType === 'interactive' ? s.weaponScrollingAttack : 0);
 
-  const totalIntPercent = stats.baseIntPercent + stats.erdaStatPercent;
-  const totalLukPercent = stats.baseLukPercent + stats.erdaStatPercent;
-  const totalMainStat = (stats.baseMainStat * (1 + totalIntPercent / 100)) + stats.flatMainStat + stats.erdaMainStat;
-  const totalSecondaryStat = (stats.baseSecondaryStat * (1 + totalLukPercent / 100)) + stats.flatSecondaryStat + stats.erdaSecondaryStat;
+    return { calculatedWeaponMA, calculatedBowAtt, weaponBaseMA, bowBaseAtt, sfMA, sfBowAtt, flameMA, flameBowAtt };
+  };
 
-  // Update final damage factor based on level
-  React.useEffect(() => {
+  const getFinalDamageFactor = (s: CharacterStats) => {
     let newFactor = 0;
-    if (stats.serverType === 'heroic') {
-      if (stats.characterLevel >= 200 && stats.characterLevel <= 249) {
+    if (s.serverType === 'heroic') {
+      if (s.characterLevel >= 200 && s.characterLevel <= 249) {
         newFactor = 35;
-      } else if (stats.characterLevel >= 250 && stats.characterLevel <= 300) {
+      } else if (s.characterLevel >= 250 && s.characterLevel <= 300) {
         newFactor = 45;
       }
     }
-    if (newFactor !== stats.finalDamageFactor) {
-      setStats(prev => ({ ...prev, finalDamageFactor: newFactor }));
-    }
-  }, [stats.characterLevel, stats.serverType]);
+    return newFactor;
+  };
+
+  const weaponData = useMemo(() => getWeaponStats(stats), [
+    stats.weaponType, 
+    stats.weaponLevel, 
+    stats.flameTier, 
+    stats.starForce, 
+    stats.serverType, 
+    stats.weaponScrollingAttack
+  ]);
+
+  const { calculatedWeaponMA, calculatedBowAtt, weaponBaseMA, bowBaseAtt, sfMA, sfBowAtt, flameMA, flameBowAtt } = weaponData;
+
+  const combatPower = useMemo(() => calculateCombatPower(stats), [stats]);
+  const erdaLinkCombatPower = useMemo(() => calculateErdaLinkCombatPower(stats), [stats]);
+
+  const totalIntPercent = stats.baseIntPercent;
+  const totalLukPercent = stats.baseLukPercent;
+  const totalMainStat = Math.floor(stats.baseMainStat * (1 + totalIntPercent / 100)) + stats.flatMainStat;
+  const totalSecondaryStat = Math.floor(stats.baseSecondaryStat * (1 + totalLukPercent / 100)) + stats.flatSecondaryStat;
 
   const handleStatChange = (key: keyof CharacterStats, value: number) => {
-    let newValue = value;
-    const nonNegativeStats: (keyof CharacterStats)[] = [
-      'attack', 'baseMainStat', 'baseSecondaryStat', 'baseIntPercent', 'baseLukPercent',
-      'flatMainStat', 'flatSecondaryStat', 'erdaMainStat', 'erdaSecondaryStat',
-      'erdaStatPercent', 'attackPercent', 'erdaAttack', 'damage', 'bossDamage',
-      'critDamage', 'erdaDamage', 'erdaBossDamage', 'erdaCritDamage', 'weaponScrollingAttack'
-    ];
+    setStats((prev) => {
+      let newValue = value;
+      const nonNegativeStats: (keyof CharacterStats)[] = [
+        'attack', 'baseMainStat', 'baseSecondaryStat', 'baseIntPercent', 'baseLukPercent',
+        'flatMainStat', 'flatSecondaryStat', 'erdaMainStat', 'erdaSecondaryStat',
+        'erdaStatPercent', 'attackPercent', 'erdaAttack', 'damage', 'bossDamage',
+        'critDamage', 'erdaDamage', 'erdaBossDamage', 'erdaCritDamage', 'weaponScrollingAttack'
+      ];
 
-    if (nonNegativeStats.includes(key)) {
-      newValue = Math.max(0, value);
-    }
-    setStats((prev) => ({ ...prev, [key]: newValue }));
+      /*if (key === 'attack') {
+        const currentWeaponBaseMA = prev.weaponType === 'genesis' ? 400 : 347;
+        newValue = Math.max(currentWeaponBaseMA, value);
+      } else */if (nonNegativeStats.includes(key)) {
+        newValue = Math.max(0, value);
+      }
 
-    const maxCharacterLevel: (keyof CharacterStats)[] = [
-      'characterLevel'
-    ];
+      if (key === 'characterLevel') {
+        newValue = Math.min(300, Math.max(0, value));
+      }
 
-    if (maxCharacterLevel.includes(key)) {
-      if (value < 0) {newValue = 0;}
-      else if (value > 300) {newValue = 300;}
-    }
-    setStats((prev) => ({ ...prev, [key]: newValue }));
+      const next = { ...prev, [key]: newValue };
+      
+      // Calculate derived values and sync
+      const { calculatedWeaponMA, calculatedBowAtt } = getWeaponStats(next);
+      const maDiff = calculatedWeaponMA - prev.weaponTotalMagicAtt;
+      const finalDamageFactor = getFinalDamageFactor(next);
+
+      return {
+        ...next,
+        attack: key === 'attack' ? newValue : Math.max(calculatedWeaponMA, next.attack + maDiff),
+        weaponTotalMagicAtt: calculatedWeaponMA,
+        bowEquivalentTotalAtt: calculatedBowAtt,
+        finalDamageFactor
+      };
+    });
   };
 
   const resetStats = () => {
+    const saved = localStorage.getItem('sia_astelle_stats');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setStats({ ...INITIAL_STATS, ...parsed });
+        return;
+      } catch (e) {
+        console.error('Failed to reset to saved stats', e);
+      }
+    }
     setStats(INITIAL_STATS);
   };
 
   const setWeaponType = (type: 'arcane' | 'genesis') => {
-    setStats(prev => ({
-      ...prev,
-      weaponType: type,
-      weaponLevel: 200, // Both Arcane and Genesis are level 200
-      starForce: type === 'genesis' ? 22 : prev.starForce
-    }));
+    setStats(prev => {
+      const next = {
+        ...prev,
+        weaponType: type,
+        weaponLevel: 200,
+        starForce: type === 'genesis' ? 22 : prev.starForce
+      };
+      const { calculatedWeaponMA, calculatedBowAtt } = getWeaponStats(next);
+      const maDiff = calculatedWeaponMA - prev.weaponTotalMagicAtt;
+      
+      return {
+        ...next,
+        attack: Math.max(calculatedWeaponMA, next.attack + maDiff),
+        weaponTotalMagicAtt: calculatedWeaponMA,
+        bowEquivalentTotalAtt: calculatedBowAtt
+      };
+    });
   };
 
   const setServerType = (type: 'heroic' | 'interactive') => {
-    setStats(prev => ({ ...prev, serverType: type }));
+    setStats(prev => {
+      const next = { ...prev, serverType: type };
+      const { calculatedWeaponMA, calculatedBowAtt } = getWeaponStats(next);
+      const maDiff = calculatedWeaponMA - prev.weaponTotalMagicAtt;
+      const finalDamageFactor = getFinalDamageFactor(next);
+
+      return {
+        ...next,
+        attack: Math.max(calculatedWeaponMA, next.attack + maDiff),
+        weaponTotalMagicAtt: calculatedWeaponMA,
+        bowEquivalentTotalAtt: calculatedBowAtt,
+        finalDamageFactor
+      };
+    });
   };
 
   const formatNumber = (num: number) => {
@@ -583,7 +626,7 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <StatInput
                   id="attack"
-                  label="Magic Attack"
+                  label="Base Magic Attack"
                   value={stats.attack}
                   min={0}
                   onChange={(v) => handleStatChange('attack', v)}
@@ -596,9 +639,9 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                           <strong className="text-brand-accent block mb-1">Magic Attack Info:</strong>
                             • <span className="text-white">Default values are for a Genesis Weapon with a Tier 7 Attack Flame.<br/><br/>
                             • Select your weapon and server type, and input the <span className="text-yellow-400">Star Force</span> and <span className="text-teal-300">Attack Flame Tier</span> of your current weapon before inputting Magic Attack. If Interactive, input the <span className="text-brand-secondary">Weapon Scrolling Attack</span> value before inputting Magic Attack.<br/><br/>
-                            • For Magic Attack: Hover over MAGIC ATT in your stat window and look for [Applied Value]. Input (Base Value - Skills - Usable Item (This is the attack from the Soul Weapon gauge.) + Event Magic ATT + Will of the Alliance - Erda Link).<br/><br/>
+                            • For Base Magic Attack: Hover over MAGIC ATT in your stat window and look for [Applied Value]. Input (Base Value - Skills - Usable Item (This is the attack from the Soul Weapon gauge.) + Event Magic ATT + Will of the Alliance - Erda Link).<br/><br/>
                             • <span className="text-brand-secondary">Example: Total Base Value (3820) - Skills (270) - Usable Item (20) + Event Magic ATT (40) + Will of the Alliance (5) - Erda Link (136) = 3464.</span><br/><br/>
-                            • For Magic Attack %: Hover over MAGIC ATT in your stat window and look for [% Value]. Input only the Equipment Item value.<br/><br/></span>
+                            • For Base Magic Attack %: Hover over MAGIC ATT in your stat window and look for [% Value]. Input only the Equipment Item value.<br/><br/></span>
                         </p>
                       </div>
                     </div>
@@ -606,7 +649,7 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                 />
                 <StatInput
                   id="attackPercent"
-                  label="Magic Attack %"
+                  label="Base Magic Attack %"
                   value={stats.attackPercent}
                   min={0}
                   onChange={(v) => handleStatChange('attackPercent', v)}
@@ -642,7 +685,7 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <StatInput
                   id="damage"
-                  label="Damage %"
+                  label="Base Damage %"
                   value={stats.damage}
                   min={0}
                   onChange={(v) => handleStatChange('damage', v)}
@@ -655,11 +698,11 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                         <p className="text-xs text-zinc-300 font-sans leading-relaxed normal-case tracking-normal">
                           <strong className="text-brand-accent block mb-1">Damage Info:</strong>
                           <span className="text-white">
-                          • For Damage %: Hover over DAMAGE in your stat window and look for [Applied Value]. Input (Damage - Skills - Erda Link).<br/><br/>
+                          • For Base Damage %: Hover over DAMAGE in your stat window and look for [Applied Value]. Input (Damage - Skills - Erda Link).<br/><br/>
                           • <span className="text-brand-secondary">Example: Total Damage % (127) - Skills (63) - Erda Link (10) = 54.</span><br/><br/>
-                          • For Boss Damage %: Hover over BOSS DAMAGE in your stat window and look for [Applied Value]. Input (Boss Damage - Skills + Event Boss Damage - Erda Link).<br/><br/>
+                          • For Base Boss Damage %: Hover over BOSS DAMAGE in your stat window and look for [Applied Value]. Input (Boss Damage - Skills + Event Boss Damage - Erda Link).<br/><br/>
                           • <span className="text-brand-secondary">Example: Total Boss Damage (568) - Skills (88) + Event Boss Damage (40) - Erda Link (56) = 464.</span><br/><br/>
-                          • For Critical Damage %: Hover over CRITICAL DAMAGE in your stat window and look for [Applied Value]. Input (Critical Damage - Skills - Erda Link).<br/><br/>
+                          • For Base Critical Damage %: Hover over CRITICAL DAMAGE in your stat window and look for [Applied Value]. Input (Critical Damage - Skills - Erda Link).<br/><br/>
                           • <span className="text-brand-secondary">Example: Total Critical Damage (128) - Skills (30) - Erda Link (9) = 89.</span></span>
                         </p>
                       </div>
@@ -668,7 +711,7 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                 />
                 <StatInput
                   id="bossDamage"
-                  label="Boss Damage %"
+                  label="Base Boss Damage %"
                   value={stats.bossDamage}
                   min={0}
                   onChange={(v) => handleStatChange('bossDamage', v)}
@@ -677,7 +720,7 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                 />
                 <StatInput
                   id="critDamage"
-                  label="Critical Damage %"
+                  label="Base Critical Damage %"
                   value={stats.critDamage}
                   min={0}
                   onChange={(v) => handleStatChange('critDamage', v)}
@@ -787,22 +830,22 @@ Increase: +${formatNumber(erdaLinkCombatPower - combatPower)} (${((erdaLinkComba
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">
                   <span className="text-[11px] font-mono text-zinc-100 uppercase">Stat Factor (INT & LUK)</span>
                   <span className="text-xs font-mono text-zinc-100">
-                    {(4 * totalMainStat + totalSecondaryStat)}
+                    {Math.floor((4 * totalMainStat + totalSecondaryStat))}
                   </span>
                 </div>
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">
                   <span className="text-[11px] font-mono text-zinc-100 uppercase">Magic Attack Factor</span>
                   <span className="text-xs font-mono text-zinc-100">
-                    {Math.floor(((stats.attack + stats.erdaAttack - stats.weaponTotalMagicAtt + stats.bowEquivalentTotalAtt) * (1 + stats.attackPercent / 100)))}
+                    {Math.floor(((stats.attack - stats.weaponTotalMagicAtt + stats.bowEquivalentTotalAtt) * (1 + stats.attackPercent / 100)))}
                   </span>
                 </div>
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">
                   <span className="text-[11px] font-mono text-zinc-100 uppercase">Damage Factor</span>
-                  <span className="text-xs font-mono text-zinc-100">{((100 + stats.damage + stats.bossDamage + stats.erdaDamage + stats.erdaBossDamage) / 100).toFixed(4)}x</span>
+                  <span className="text-xs font-mono text-zinc-100">{((100 + stats.damage + stats.bossDamage) / 100).toFixed(4)}x</span>
                 </div>
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">
                   <span className="text-[11px] font-mono text-zinc-100 uppercase">Critical Damage Factor</span>
-                  <span className="text-xs font-mono text-zinc-100">{((135 + stats.critDamage + stats.erdaCritDamage) / 100).toFixed(4)}x</span>
+                  <span className="text-xs font-mono text-zinc-100">{((135 + stats.critDamage) / 100).toFixed(4)}x</span>
                 </div>
                 <div className="p-3 bg-white/10 border border-white/20 rounded-xl flex justify-between items-center backdrop-blur-sm">
                   <span className="text-[11px] font-mono text-zinc-100 uppercase">Final Damage Factor</span>
